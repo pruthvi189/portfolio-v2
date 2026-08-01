@@ -1,0 +1,18 @@
+
+> portfolio-v2@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.12 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://172.20.128.1:3000
+✓ Ready in 829ms
+
+ GET / 200 in 698ms (next.js: 312ms, application-code: 386ms)
+✓ Compiled in 71ms
+ GET / 200 in 182ms (next.js: 130ms, application-code: 51ms)
+✓ Compiled in 59ms
+ GET / 200 in 127ms (next.js: 89ms, application-code: 39ms)
+✓ Compiled in 112ms
+ GET / 200 in 136ms (next.js: 85ms, application-code: 51ms)
+✓ Compiled in 37ms
+ GET / 200 in 123ms (next.js: 92ms, application-code: 31ms)
