@@ -10,8 +10,6 @@ function useTyper(text: string, speed: number) {
 
   useEffect(() => {
     let i = 0;
-    setDisplay("");
-    setDone(false);
     const t = setInterval(() => {
       if (i < text.length) {
         setDisplay(text.slice(0, i + 1));

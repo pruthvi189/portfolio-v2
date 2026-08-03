@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { site } from "@/data/site";
 
 export function BootSequence() {
@@ -10,71 +10,92 @@ export function BootSequence() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [showCursor, setShowCursor] = useState(true);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     let cancelled = false;
+    let seen = true;
     try {
-      if (sessionStorage.getItem("boot-seen")) return;
+      seen = sessionStorage.getItem("boot-seen") === "1";
     } catch {}
 
-    setShow(true);
+    if (seen) return;
+
     document.body.style.overflow = "hidden";
 
-    const fullFirst = site.firstName;
-    const fullLast = site.lastName;
-    let i = 0;
-    let j = 0;
-
-    const typeFirst = setInterval(() => {
+    const raf = requestAnimationFrame(() => {
       if (cancelled) return;
-      if (i < fullFirst.length) {
-        setFirstName(fullFirst.slice(0, i + 1));
-        i++;
-      } else {
-        clearInterval(typeFirst);
-        const typeLast = setInterval(() => {
+      setShow(true);
+
+      if (reduceMotion) {
+        setFirstName(site.firstName);
+        setLastName(site.lastName);
+        setTypingDone(true);
+        setShowCursor(false);
+        setTimeout(() => {
           if (cancelled) return;
-          if (j < fullLast.length) {
-            setLastName(fullLast.slice(0, j + 1));
-            j++;
-          } else {
-            clearInterval(typeLast);
-            setTypingDone(true);
-          }
-        }, 60);
-
-        setTimeout(() => {
-          if (!cancelled) {
-            setShowCursor(false);
-          }
-        }, 500);
-
-        setTimeout(() => {
-          if (!cancelled) {
-            setShow(false);
-            document.body.style.overflow = "";
-            try {
-              sessionStorage.setItem("boot-seen", "1");
-            } catch {}
-          }
-        }, 1500);
+          setShow(false);
+          document.body.style.overflow = "";
+          try {
+            sessionStorage.setItem("boot-seen", "1");
+          } catch {}
+        }, 400);
+        return;
       }
-    }, 80);
 
-    const safety = setTimeout(() => {
-      if (!cancelled) {
-        setShow(false);
-        document.body.style.overflow = "";
-      }
-    }, 3000);
+      const fullFirst = site.firstName;
+      const fullLast = site.lastName;
+      let i = 0;
+      let j = 0;
+
+      const typeFirst = setInterval(() => {
+        if (cancelled) return;
+        if (i < fullFirst.length) {
+          setFirstName(fullFirst.slice(0, i + 1));
+          i++;
+        } else {
+          clearInterval(typeFirst);
+          const typeLast = setInterval(() => {
+            if (cancelled) return;
+            if (j < fullLast.length) {
+              setLastName(fullLast.slice(0, j + 1));
+              j++;
+            } else {
+              clearInterval(typeLast);
+              setTypingDone(true);
+            }
+          }, 60);
+
+          setTimeout(() => {
+            if (!cancelled) setShowCursor(false);
+          }, 500);
+
+          setTimeout(() => {
+            if (!cancelled) {
+              setShow(false);
+              document.body.style.overflow = "";
+              try {
+                sessionStorage.setItem("boot-seen", "1");
+              } catch {}
+            }
+          }, 1500);
+        }
+      }, 80);
+
+      setTimeout(() => {
+        if (!cancelled) {
+          setShow(false);
+          document.body.style.overflow = "";
+        }
+      }, 3000);
+    });
 
     return () => {
       cancelled = true;
-      clearInterval(typeFirst);
-      clearTimeout(safety);
+      cancelAnimationFrame(raf);
       document.body.style.overflow = "";
     };
-  }, []);
+  }, [reduceMotion]);
 
   return (
     <AnimatePresence>

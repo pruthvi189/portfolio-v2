@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -9,15 +9,19 @@ import { Menu, X } from "lucide-react";
 const navItems = [
   { name: "Home", href: "#home" },
   { name: "Projects", href: "#projects" },
-  { name: "Skills", href: "#skills" },
   { name: "About", href: "#about" },
   { name: "Contact", href: "#contact" },
 ];
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 export function Navbar() {
   const [active, setActive] = useState("Home");
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -44,9 +48,44 @@ export function Navbar() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    menuRef.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        toggleRef.current?.focus();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusables = menuRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE);
+      if (!focusables || focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [mobileOpen]);
+
   return (
     <>
       <nav
+        aria-label="Main navigation"
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
           scrolled
@@ -95,9 +134,12 @@ export function Navbar() {
           </div>
 
           <button
+            ref={toggleRef}
             onClick={() => setMobileOpen(!mobileOpen)}
             className="sm:hidden p-2 text-muted hover:text-foreground transition-colors"
             aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-menu"
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -107,6 +149,8 @@ export function Navbar() {
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
+            ref={menuRef}
+            id="mobile-menu"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -120,6 +164,7 @@ export function Navbar() {
                   onClick={() => {
                     setActive(item.name);
                     setMobileOpen(false);
+                    toggleRef.current?.focus();
                   }}
                   className={cn(
                     "px-4 py-3 rounded-lg text-sm transition-colors",

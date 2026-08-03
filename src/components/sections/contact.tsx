@@ -6,16 +6,34 @@ import { site } from "@/data/site";
 import { Mail, FileText } from "lucide-react";
 import { GithubIcon } from "@/components/icons";
 
-function ParticleBurst({ x, y }: { x: number; y: number }) {
-  const particles = Array.from({ length: 8 }, (_, i) => ({
-    id: i,
-    angle: (i / 8) * Math.PI * 2,
-    distance: 20 + Math.random() * 30,
-  }));
+interface BurstParticle {
+  id: number;
+  angle: number;
+  distance: number;
+}
 
+interface Burst {
+  x: number;
+  y: number;
+  particles: BurstParticle[];
+}
+
+function makeBurst(x: number, y: number): Burst {
+  return {
+    x,
+    y,
+    particles: Array.from({ length: 8 }, (_, i) => ({
+      id: i,
+      angle: (i / 8) * Math.PI * 2,
+      distance: 20 + Math.random() * 30,
+    })),
+  };
+}
+
+function ParticleBurst({ burst }: { burst: Burst }) {
   return (
     <AnimatePresence>
-      {particles.map((p) => (
+      {burst.particles.map((p) => (
         <motion.div
           key={p.id}
           initial={{ opacity: 1, x: 0, y: 0 }}
@@ -27,7 +45,7 @@ function ParticleBurst({ x, y }: { x: number; y: number }) {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
           className="absolute w-1 h-1 rounded-full bg-accent/60 pointer-events-none"
-          style={{ left: x, top: y }}
+          style={{ left: burst.x, top: burst.y }}
         />
       ))}
     </AnimatePresence>
@@ -48,16 +66,15 @@ function ContactCard({
   delay: number;
 }) {
   const ref = useRef<HTMLAnchorElement>(null);
-  const [particles, setParticles] = useState<{ x: number; y: number } | null>(null);
+  const [burst, setBurst] = useState<Burst | null>(null);
   const isExternal = href.startsWith("http");
 
   const handleMouseEnter = useCallback((e: React.MouseEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setParticles({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-    setTimeout(() => setParticles(null), 500);
+    setBurst(
+      makeBurst(e.clientX - rect.left, e.clientY - rect.top)
+    );
+    setTimeout(() => setBurst(null), 500);
   }, []);
 
   return (
@@ -75,7 +92,7 @@ function ContactCard({
         onMouseEnter={handleMouseEnter}
         className="group relative flex flex-col items-center text-center border border-border/50 rounded-[20px] p-6 bg-surface/20 hover:scale-[1.05] hover:border-accent/20 hover:shadow-[0_0_40px_-10px_rgba(108,155,207,0.12)] transition-all duration-300 ease-out overflow-hidden"
       >
-        {particles && <ParticleBurst x={particles.x} y={particles.y} />}
+        {burst && <ParticleBurst burst={burst} />}
         <div className="flex items-center justify-center w-12 h-12 rounded-full bg-surface text-muted group-hover:bg-accent/10 group-hover:text-accent mb-3 transition-all duration-300">
           <Icon size={20} />
         </div>

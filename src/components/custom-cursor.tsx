@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, useSpring, useMotionValue } from "motion/react";
+import { useMediaQuery } from "@/lib/use-media-query";
+
+const HOVERABLE =
+  "a, button, [role='button'], input, textarea, select, [data-cursor-hover]";
 
 export function CustomCursor() {
   const [visible, setVisible] = useState(false);
   const [hovering, setHovering] = useState(false);
-  const [reduced, setReduced] = useState(false);
-  const [touchDevice, setTouchDevice] = useState(false);
+  const reduced = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const touchDevice = useMediaQuery("(pointer: coarse)");
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -16,18 +20,13 @@ export function CustomCursor() {
   const springY = useSpring(mouseY, { stiffness: 300, damping: 30 });
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener("change", handler);
-
-    setTouchDevice(window.matchMedia("(pointer: coarse)").matches);
-
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
-  useEffect(() => {
     if (reduced) return;
+
+    const handleOver = (e: MouseEvent) => {
+      const target = e.target as Element | null;
+      const isHoverable = !!target?.closest?.(HOVERABLE);
+      setHovering((prev) => (prev === isHoverable ? prev : isHoverable));
+    };
 
     const handleMouse = (e: MouseEvent) => {
       mouseX.set(e.clientX);
@@ -37,29 +36,16 @@ export function CustomCursor() {
     const handleLeave = () => setVisible(false);
     const handleEnter = () => setVisible(true);
 
-    const addHover = () => setHovering(true);
-    const removeHover = () => setHovering(false);
-
     document.addEventListener("mousemove", handleMouse);
     document.addEventListener("mouseleave", handleLeave);
     document.addEventListener("mouseenter", handleEnter);
-
-    const hoverables = document.querySelectorAll(
-      "a, button, [role='button'], input, textarea, select, [data-cursor-hover]"
-    );
-    hoverables.forEach((el) => {
-      el.addEventListener("mouseenter", addHover);
-      el.addEventListener("mouseleave", removeHover);
-    });
+    document.addEventListener("mouseover", handleOver);
 
     return () => {
       document.removeEventListener("mousemove", handleMouse);
       document.removeEventListener("mouseleave", handleLeave);
       document.removeEventListener("mouseenter", handleEnter);
-      hoverables.forEach((el) => {
-        el.removeEventListener("mouseenter", addHover);
-        el.removeEventListener("mouseleave", removeHover);
-      });
+      document.removeEventListener("mouseover", handleOver);
     };
   }, [reduced, mouseX, mouseY]);
 

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { prefersReducedMotion } from "@/lib/utils";
 
 const KONAMI = [
   "ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown",
@@ -12,7 +13,6 @@ const KONAMI = [
 const shortcuts: Record<string, string> = {
   h: "#home",
   p: "#projects",
-  s: "#skills",
   a: "#about",
 };
 
@@ -177,7 +177,7 @@ function CoffeePopup({ onClose }: { onClose: () => void }) {
 
 export function EasterEgg() {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [sequence, setSequence] = useState<string[]>([]);
+  const seqRef = useRef<string[]>([]);
   const [showSecret, setShowSecret] = useState(false);
   const [hologram, setHologram] = useState(false);
   const [purplePulse, setPurplePulse] = useState(false);
@@ -229,40 +229,35 @@ export function EasterEgg() {
       const target = shortcuts[lower];
       if (target) {
         e.preventDefault();
-        document.querySelector(target)?.scrollIntoView({ behavior: "smooth" });
+        const behavior = prefersReducedMotion() ? "auto" : "smooth";
+        document.querySelector(target)?.scrollIntoView({ behavior });
         addToast(`Jumped to ${target.replace("#", "")}`);
       }
 
-      setSequence((prev) => {
-        const seqKey = raw.startsWith("Arrow") ? raw : lower;
-        const next = [...prev, seqKey].slice(-10);
+      const seqKey = raw.startsWith("Arrow") ? raw : lower;
+      const next = [...seqRef.current, seqKey].slice(-10);
+      seqRef.current = next;
 
-        const last10 = next.slice(-10);
-        if (
-          last10.length === KONAMI.length &&
-          last10.every((k, i) => k === KONAMI[i])
-        ) {
-          setShowSecret(true);
-          setTimeout(() => setShowSecret(false), 3000);
-          return [];
-        }
+      if (next.length === KONAMI.length && next.every((k, i) => k === KONAMI[i])) {
+        seqRef.current = [];
+        setShowSecret(true);
+        setTimeout(() => setShowSecret(false), 3000);
+        return;
+      }
 
-        const last2 = next.slice(-2).join("");
-        if (last2 === "42") {
-          addToast("The answer to life, the universe, and everything.");
-          setPurplePulse(true);
-          setTimeout(() => setPurplePulse(false), 1500);
-          return [];
-        }
+      const last2 = next.slice(-2).join("");
+      if (last2 === "42") {
+        seqRef.current = [];
+        addToast("The answer to life, the universe, and everything.");
+        setPurplePulse(true);
+        setTimeout(() => setPurplePulse(false), 1500);
+        return;
+      }
 
-        const last6 = next.slice(-6).join("");
-        if (last6 === "coffee") {
-          setShowCoffee(true);
-          return [];
-        }
-
-        return next;
-      });
+      if (next.slice(-6).join("") === "coffee") {
+        seqRef.current = [];
+        setShowCoffee(true);
+      }
     };
 
     window.addEventListener("keydown", handleKey);
