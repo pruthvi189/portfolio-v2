@@ -19,12 +19,21 @@ const FOCUSABLE =
 export function Navbar() {
   const [active, setActive] = useState("Home");
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const lastScrollY = useRef(0);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 40);
+      if (!mobileOpen) {
+        setHidden(y > lastScrollY.current && y > 160);
+      }
+      lastScrollY.current = y;
+    };
     window.addEventListener("scroll", onScroll);
 
     const observers: IntersectionObserver[] = [];
@@ -46,7 +55,7 @@ export function Navbar() {
       window.removeEventListener("scroll", onScroll);
       observers.forEach((o) => o.disconnect());
     };
-  }, []);
+  }, [mobileOpen]);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -84,10 +93,12 @@ export function Navbar() {
 
   return (
     <>
-      <nav
+      <motion.nav
         aria-label="Main navigation"
+        animate={{ y: hidden ? -96 : 0 }}
+        transition={{ duration: 0.3, ease: [0.21, 0.47, 0.32, 0.98] }}
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+          "fixed top-0 left-0 right-0 z-50 transition-colors duration-300",
           scrolled
             ? "bg-background/70 backdrop-blur-xl border-b border-border/50"
             : "bg-transparent"
@@ -135,7 +146,10 @@ export function Navbar() {
 
           <button
             ref={toggleRef}
-            onClick={() => setMobileOpen(!mobileOpen)}
+            onClick={() => {
+              setMobileOpen(!mobileOpen);
+              setHidden(false);
+            }}
             className="sm:hidden p-2 text-muted hover:text-foreground transition-colors"
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
@@ -144,7 +158,7 @@ export function Navbar() {
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
-      </nav>
+      </motion.nav>
 
       <AnimatePresence>
         {mobileOpen && (
