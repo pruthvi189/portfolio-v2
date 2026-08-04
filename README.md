@@ -4,7 +4,7 @@
 
 **ML Engineer building intelligent products from idea to deployment**
 
-[![Live Site](https://img.shields.io/badge/Live-https://portfolio-v2-bay-seven.vercel.app-2ea44f?style=for-the-badge)](https://portfolio-v2-bay-seven.vercel.app)
+[![Live Site](https://img.shields.io/badge/Live-https://portfolio-dev-site.vercel.app-2ea44f?style=for-the-badge)](https://portfolio-dev-site.vercel.app)
 ![Next.js](https://img.shields.io/badge/Next.js%2016-black?style=for-the-badge&logo=next.js&logoColor=white)
 ![React](https://img.shields.io/badge/React%2019-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
